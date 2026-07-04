@@ -6,6 +6,7 @@ import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.Model;
 import com.anthropic.models.messages.RawMessageStreamEvent;
+import com.anthropic.models.messages.WebSearchTool20260209;
 import com.anthropic.errors.UnauthorizedException;
 import com.lekhpotli.backend.dto.ChatMessageDto;
 import org.slf4j.Logger;
@@ -46,7 +47,17 @@ public class ClaudeChatService {
                 MessageCreateParams.Builder paramsBuilder = MessageCreateParams.builder()
                         .model(Model.of(model))
                         .maxTokens(maxTokens)
-                        .system(systemPrompt);
+                        .system(systemPrompt)
+                        // Lets Claude search the web for anything past its training
+                        // cutoff or otherwise not in the conversation (current events,
+                        // scores, prices, etc.) instead of answering from stale knowledge.
+                        // allowedCallers=DIRECT is required for Haiku-tier models, which
+                        // don't support the programmatic (code-execution-driven) calling
+                        // path this tool defaults to; it also works fine on larger models,
+                        // so it's set unconditionally regardless of which model is configured.
+                        .addTool(WebSearchTool20260209.builder()
+                                .addAllowedCaller(WebSearchTool20260209.AllowedCaller.DIRECT)
+                                .build());
 
                 for (ChatMessageDto message : history) {
                     if ("user".equals(message.role())) {
