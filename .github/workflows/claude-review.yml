@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   review:
@@ -43,7 +42,9 @@ jobs:
           import subprocess
           import urllib.request
 
-          with open("diff_trunc.txt") as f:
+          # errors="replace" guards against the byte-based `head -c` truncation
+          # having split a multi-byte UTF-8 character at the cut point.
+          with open("diff_trunc.txt", errors="replace") as f:
               diff = f.read()
 
           if not diff.strip():
@@ -79,6 +80,8 @@ jobs:
                   ) or "Claude returned no reviewable text."
               except urllib.error.HTTPError as e:
                   review_text = f"Review request failed ({e.code}): {e.read().decode()[:500]}"
+              except urllib.error.URLError as e:
+                  review_text = f"Review request failed (network/timeout): {e.reason}"
 
           body = review_text + "\n\n---\n🤖 Automated review by Claude"
           subprocess.run(
