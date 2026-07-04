@@ -1,0 +1,67 @@
+:root,
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --bg-elevated: #f7f6fb;
+  --sidebar-bg: #f4f2fa;
+  --text: #201d2b;
+  --text-muted: #6b6478;
+  --border: #e4e1ec;
+  --accent: #6d5efc;
+  --accent-hover: #5b4de0;
+  --accent-contrast: #ffffff;
+  --bubble-user-bg: #6d5efc;
+  --bubble-user-text: #ffffff;
+  --bubble-assistant-bg: #f1eefb;
+  --bubble-assistant-text: #201d2b;
+  --shadow: rgba(20, 15, 40, 0.08) 0 4px 20px;
+  --scrollbar: #d9d5e6;
+}
+
+:root[data-theme='dark'] {
+  --bg: #14121c;
+  --bg-elevated: #1c1926;
+  --sidebar-bg: #17141f;
+  --text: #ece9f5;
+  --text-muted: #a29cb5;
+  --border: #2c2838;
+  --accent: #8b7cff;
+  --accent-hover: #a495ff;
+  --accent-contrast: #14121c;
+  --bubble-user-bg: #8b7cff;
+  --bubble-user-text: #14121c;
+  --bubble-assistant-bg: #221f2e;
+  --bubble-assistant-text: #ece9f5;
+  --shadow: rgba(0, 0, 0, 0.4) 0 4px 20px;
+  --scrollbar: #35304a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar);
+  border-radius: 8px;
+}
+
+button {
+  font-family: inherit;
+}

@@ -1,0 +1,7 @@
+# OS
+.DS_Store
+
+# Editor-local tooling/session data (not part of the app)
+.vscode/
+.github/modernize/
+.idea/
