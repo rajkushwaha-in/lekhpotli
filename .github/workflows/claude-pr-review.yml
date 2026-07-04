@@ -50,7 +50,7 @@ jobs:
           else:
               payload = {
                   "model": "claude-opus-4-8",
-                  "max_tokens": 2000,
+                  "max_tokens": 4096,
                   "thinking": {"type": "adaptive"},
                   "system": (
                       "You are a meticulous senior code reviewer. Review the given git diff "
@@ -76,7 +76,11 @@ jobs:
                       data = json.load(resp)
                   review_text = "".join(
                       b.get("text", "") for b in data.get("content", []) if b.get("type") == "text"
-                  ) or "Claude returned no reviewable text."
+                  ) or (
+                      f"Claude returned no reviewable text (stop_reason={data.get('stop_reason')}). "
+                      "This usually means max_tokens was hit before any visible text was written "
+                      "(e.g. the whole budget went to thinking) - consider raising max_tokens."
+                  )
               except urllib.error.HTTPError as e:
                   review_text = f"Review request failed ({e.code}): {e.read().decode()[:500]}"
               except urllib.error.URLError as e:
