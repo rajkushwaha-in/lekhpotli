@@ -1,11 +1,12 @@
-name: Claude Commit Review
+name: Claude PR Review
 
 on:
-  push:
-    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
-  contents: write
+  contents: read
+  pull-requests: write
 
 jobs:
   review:
@@ -16,13 +17,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Compute diff for this push
+      - name: Compute PR diff
         run: |
-          if git cat-file -e "${{ github.event.before }}" 2>/dev/null && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
-            git diff "${{ github.event.before }}" "${{ github.sha }}" > diff.txt
-          else
-            git show "${{ github.sha }}" > diff.txt
-          fi
+          git fetch origin "${{ github.event.pull_request.base.ref }}"
+          git diff "origin/${{ github.event.pull_request.base.ref }}...HEAD" > diff.txt
           # Cap the diff size so the review request stays a reasonable size.
           head -c 60000 diff.txt > diff_trunc.txt
           if [ "$(wc -c < diff.txt)" -gt 60000 ]; then
@@ -34,7 +32,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           python3 - <<'PYEOF'
           import json
@@ -58,7 +56,8 @@ jobs:
                       "You are a meticulous senior code reviewer. Review the given git diff "
                       "for correctness bugs, security issues, and notable code quality problems. "
                       "Be concise and use markdown. Cite specific lines/files. If nothing "
-                      "significant stands out, say so briefly instead of inventing nitpicks."
+                      "significant stands out, say so briefly instead of inventing nitpicks. "
+                      "This review is advisory only for a human who will decide whether to merge."
                   ),
                   "messages": [{"role": "user", "content": diff}],
               }
@@ -83,10 +82,18 @@ jobs:
               except urllib.error.URLError as e:
                   review_text = f"Review request failed (network/timeout): {e.reason}"
 
-          body = review_text + "\n\n---\n🤖 Automated review by Claude"
+          body = (
+              review_text
+              + "\n\n---\n🤖 Automated advisory review by Claude. "
+              + "A human must still approve and merge this PR."
+          )
           subprocess.run(
-              ["gh", "api", f"repos/{os.environ['GITHUB_REPOSITORY']}/commits/{os.environ['GITHUB_SHA']}/comments",
-               "-f", f"body={body}"],
+              [
+                  "gh", "api",
+                  f"repos/{os.environ['GITHUB_REPOSITORY']}/pulls/{os.environ['PR_NUMBER']}/reviews",
+                  "-f", f"body={body}",
+                  "-f", "event=COMMENT",
+              ],
               check=True,
           )
           PYEOF
